@@ -6,8 +6,8 @@ print_velocities: False
 
 # True for calculating targets
 # False for just wandering
-calculate_target: True
-#calculate_target: False
+#calculate_target: True
+calculate_target: False
 
 # Topics to read and post data
 # Subscribers

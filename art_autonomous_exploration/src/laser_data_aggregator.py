@@ -21,6 +21,8 @@ class LaserDataAggregator:
 
         # Get the measurements
         self.laser_scan = list(data.ranges)
+        self.angle_min = data.angle_min
+        self.angle_max = data.angle_max
 
         # Pay attention for special values
         for i in range(0, len(self.laser_scan)):
