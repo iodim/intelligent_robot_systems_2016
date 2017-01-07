@@ -10,6 +10,8 @@ from path_planning import PathPlanning
 from utilities import RvizHandler
 from utilities import Print
 
+import ipdb
+
 from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped
 from visualization_msgs.msg import Marker

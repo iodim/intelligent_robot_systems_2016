@@ -14,12 +14,12 @@ from sonar_data_aggregator import SonarDataAggregator
 from laser_data_aggregator import LaserDataAggregator
 from navigation import Navigation
 
-# Class for assigning the robot speeds 
+# Class for assigning the robot speeds
 class RobotController:
 
     # Constructor
     def __init__(self):
-        
+
       # Debugging purposes
       self.print_velocities = rospy.get_param('print_velocities')
 
@@ -45,7 +45,7 @@ class RobotController:
 
     # This function publishes the speeds and moves the robot
     def publishSpeeds(self, event):
-        
+
       # Produce speeds
       self.produceSpeeds()
 
@@ -80,14 +80,12 @@ class RobotController:
       #ipdb.set_trace()
       linear = -sum(np.cos(angles)/(scan**2))/len(scan)
       angular = -sum(np.sin(angles)/(scan**2))/len(scan)
-      linear = min(0.15, max(-0.15, linear))
-      angular = min(0.3, max(-0.3, angular))
       ##########################################################################
       return [linear, angular]
 
     # Combines the speeds into one output using a motor schema approach
     def produceSpeeds(self):
- 
+
       # Produce target if not existent
       if self.move_with_target == True and \
               self.navigation.target_exists == False:
@@ -107,25 +105,34 @@ class RobotController:
 
       # Get the submodule's speeds
       [l_laser, a_laser] = self.produceSpeedsLaser()
-      
+
       # You must fill these
       self.linear_velocity  = 0
       self.angular_velocity = 0
-      
+
+      # Obstacle avoidacnce constants
+      c_l = 0.15
+      c_a = 0.5
+
       if self.move_with_target == True:
         [l_goal, a_goal] = self.navigation.velocitiesToNextSubtarget()
         ############################### NOTE QUESTION ############################
         # You must combine the two sets of speeds. You can use motor schema,
         # subsumption of whatever suits your better.
-
+        self.linear_velocity = l_goal + c_l * l_laser
+        self.angular_velocity = a_goal + c_a * a_laser
         ##########################################################################
       else:
         ############################### NOTE QUESTION ############################
         # Implement obstacle avoidance here using the laser speeds.
         # Hint: Subtract them from something constant
-        self.linear_velocity = 0.15 + l_laser
-        self.angular_velocity = a_laser
+        self.linear_velocity = 0.3 + c_l * l_laser
+        self.angular_velocity = c_a * a_laser
         ##########################################################################
+
+      # Make sure velocities are in the desired range
+      self.linear_velocity = min(0.3, max(-0.3, self.linear_velocity))
+      self.angular_velocity = min(0.3, max(-0.3, self.angular_velocity))
 
     # Assistive functions
     def stopRobot(self):
