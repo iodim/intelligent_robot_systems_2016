@@ -298,11 +298,11 @@ class Navigation:
           theta_rg = np.arctan2(st_y - ry, st_x - rx)
 
           omega = (theta_rg - theta)/np.pi
-          angular = omega * 0.3 # max angular is 0.3 m/s
+          angular = 2 * omega * 0.3 # max angular is 0.3 m/s, but we use double
+          # the speed in order to turn better
 
           u = (1 - np.abs(omega))**2
           linear = u * 0.3 # max linear is 0.3 m/s
-
         ######################### NOTE: QUESTION  ##############################
 
         return [linear, angular]
