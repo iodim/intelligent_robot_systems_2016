@@ -79,7 +79,7 @@ class Navigation:
         self.counter_to_next_sub -= 1
 
         if self.counter_to_next_sub == 0:
-          Print.art_print('\n~~~~ Time reset ~~~~',Print.RED) 
+          Print.art_print('\n~~~~ Time reset ~~~~',Print.RED)
           self.inner_target_exists = False
           self.target_exists = False
           return
@@ -92,17 +92,24 @@ class Navigation:
                     self.robot_perception.origin['y'] / self.robot_perception.resolution\
                     ]
 
-        # Find the distance between the robot pose and the next subtarget
-        dist = math.hypot(\
-            rx - self.subtargets[self.next_subtarget][0], \
-            ry - self.subtargets[self.next_subtarget][1])
+        # Clear achieved targets
+        self.subtargets = self.subtargets[self.next_subtarget:]
+        self.next_subtarget = 0
+
+        # Find the distance between the robot pose and all remaining subtargets
+        dx = [rx - st[0] for st in self.subtargets]
+        dy = [ry - st[1] for st in self.subtargets]
+        dist = [math.hypot(v[0], v[1]) for v in zip(dx, dy)]
+
+        # Check if any target is in distance
+        min_dist, min_idx = min(zip(dist, range(len(dist))))
 
         ######################### NOTE: QUESTION  ##############################
         # What if a later subtarget or the end has been reached before the
         # next subtarget? Alter the code accordingly.
         # Check if distance is less than 7 px (14 cm)
-        if dist < 5:
-          self.next_subtarget += 1
+        if min_dist < 5:
+          self.next_subtarget = min_idx + 1
           self.counter_to_next_sub = self.count_limit
           # Check if the final subtarget has been approached
           if self.next_subtarget == len(self.subtargets):
@@ -110,7 +117,7 @@ class Navigation:
         ########################################################################
 
         # Publish the current target
-        if self.next_subtarget == len(self.subtargets):
+        if self.next_subtarget >= len(self.subtargets):
             return
 
         subtarget = [\
@@ -228,6 +235,7 @@ class Navigation:
           ps.header.frame_id = "map"
           ps.pose.position.x = 0
           ps.pose.position.y = 0
+
           ######################### NOTE: QUESTION  ##############################
           # Fill the ps.pose.position values to show the path in RViz
           # You must understand what self.robot_perception.resolution
@@ -238,6 +246,7 @@ class Navigation:
           ps.pose.position.y = p[1] * self.robot_perception.resolution \
               + self.robot_perception.origin['y']
           ########################################################################
+
           ros_path.poses.append(ps)
         self.path_publisher.publish(ros_path)
 
@@ -275,15 +284,13 @@ class Navigation:
                     self.robot_perception.origin['y'] / self.robot_perception.resolution\
                     ]
         theta = self.robot_perception.robot_pose['th']
+
         ######################### NOTE: QUESTION  ##############################
         # The velocities of the robot regarding the next subtarget should be
         # computed. The known parameters are the robot pose [x,y,th] from
         # robot_perception and the next_subtarget [x,y]. From these, you can
         # compute the robot velocities for the vehicle to approach the target.
         # Hint: Trigonometry is required
-
-        # ipdb.set_trace()
-
         if self.subtargets and self.next_subtarget <= len(self.subtargets) - 1:
           st_x = self.subtargets[self.next_subtarget][0]
           st_y = self.subtargets[self.next_subtarget][1]

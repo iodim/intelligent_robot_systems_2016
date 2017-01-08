@@ -54,7 +54,7 @@ class RobotController:
       twist.linear.x = self.linear_velocity
       twist.linear.y = 0
       twist.linear.z = 0
-      twist.angular.x = 0 
+      twist.angular.x = 0
       twist.angular.y = 0
       twist.angular.z = self.angular_velocity
 
@@ -77,7 +77,6 @@ class RobotController:
       ############################### NOTE QUESTION ############################
       # Check what laser_scan contains and create linear and angular speeds
       # for obstacle avoidance
-      #ipdb.set_trace()
       linear = -sum(np.cos(angles)/(scan**2))/len(scan)
       angular = -sum(np.sin(angles)/(scan**2))/len(scan)
       ##########################################################################
