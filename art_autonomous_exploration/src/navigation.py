@@ -291,18 +291,25 @@ class Navigation:
         # robot_perception and the next_subtarget [x,y]. From these, you can
         # compute the robot velocities for the vehicle to approach the target.
         # Hint: Trigonometry is required
+        l_max = 0.3
+        a_max = 0.3
+
         if self.subtargets and self.next_subtarget <= len(self.subtargets) - 1:
           st_x = self.subtargets[self.next_subtarget][0]
           st_y = self.subtargets[self.next_subtarget][1]
 
           theta_rg = np.arctan2(st_y - ry, st_x - rx)
+          dtheta = (theta_rg - theta)
+          if dtheta > np.pi:
+            omega = (dtheta - 2*np.pi)/np.pi
+          elif dtheta < -np.pi:
+            omega = (dtheta + 2*np.pi)/np.pi
+          else:
+            omega = (theta_rg - theta)/np.pi
 
-          omega = (theta_rg - theta)/np.pi
-          angular = 2 * omega * 0.3 # max angular is 0.3 m/s, but we use double
-          # the speed in order to turn better
-
-          u = (1 - np.abs(omega))**2
-          linear = u * 0.3 # max linear is 0.3 m/s
+          # Nonlinear relations derived from experimentation
+          linear = l_max * ((1 - np.abs(omega)) ** 4)
+          angular = a_max * np.sign(omega) * (abs(omega) ** (1/3))
         ######################### NOTE: QUESTION  ##############################
 
         return [linear, angular]
