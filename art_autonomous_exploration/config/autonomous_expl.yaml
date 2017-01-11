@@ -1,5 +1,5 @@
 # Select the target function
-target_selector: 'random'
+target_selector: 'custom'
 
 # Debugging purposes
 print_velocities: False

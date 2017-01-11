@@ -188,12 +188,12 @@ class Navigation:
           start = time.time()
           target = self.target_selection.selectTarget(\
                     local_ogm,\
+                    local_ros_ogm,\
                     local_coverage,\
                     self.robot_perception.robot_pose,
                     self.robot_perception.origin,
                     self.robot_perception.resolution,
                     force_random)
-
           self.path = self.path_planning.createPath(\
               g_robot_pose,\
               target,
