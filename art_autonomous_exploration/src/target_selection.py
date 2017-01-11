@@ -65,7 +65,8 @@ class TargetSelection:
         nodes = self.topo.topologicalNodes(ogm, skeleton, coverage, origin, \
                 resolution, brush, ogm_limits)
         Print.art_print("Topo nodes time: " + str(time.time() - tinit), Print.ORANGE)
-        
+
+
         # Visualization of topological nodes
         vis_nodes = []
         for n in nodes:
@@ -132,10 +133,12 @@ class TargetSelection:
 
         return target
 
+    # def calcTopologicalCost(self, ogm, node):
+
     def selectRandomTarget(self, ogm, coverage, brushogm, ogm_limits):
       # The next target in pixels
         tinit = time.time()
-        next_target = [0, 0] 
+        next_target = [0, 0]
         found = False
         while not found:
           x_rand = random.randint(0, ogm.shape[0] - 1)

@@ -28,10 +28,10 @@ class Topology:
       for j in range(0, height):
         if ogm[i][j] < 49:
           local[i][j] = 1
-    
+
     skeleton = Cffi.thinning(local, ogml)
     skeleton = Cffi.prune(skeleton, ogml, 10)
-  
+
     viz = []
     for i in range(0, width):
       for j in range(0, height):
@@ -65,10 +65,10 @@ class Topology:
       for j in range(0, useful_height):
         if useful_ogm[i][j] < 49:
           useful_local[i][j] = 1
-      
+
     skeleton = skeletonize(useful_local)
     skeleton = self.pruning(skeleton, 10)
-  
+
     # padding
     skeleton_final = numpy.zeros(ogm.shape)
     skeleton_final[ ogml['min_x']:ogml['max_x'] , ogml['min_y']:ogml['max_y'] ] = skeleton
@@ -95,7 +95,7 @@ class Topology:
 
   def topologicalNodes(self, ogm, skeleton, coverage, origin, resolution, brush, ogm_limits):
     nodes = []
-    
+
     width = ogm.shape[0]
     height = ogm.shape[1]
 
@@ -107,7 +107,7 @@ class Topology:
           for ii in range(-1, 2):
             for jj in range(-1, 2):
               c = c + skeleton[i + ii][j + jj]
-          
+
           if (c == 2 or c == 4): # and coverage etc
             nodes.append([i, j])
 
