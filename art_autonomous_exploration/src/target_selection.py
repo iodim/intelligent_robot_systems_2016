@@ -42,7 +42,8 @@ class TargetSelection:
           target = self.selectRandomTarget(ogm, coverage, brush, ogm_limits)
           return target
 
-        target = [-1, -1]
+        tinit = time.time()
+
         g_robot_pose = [robot_pose['x_px'] - int(origin['x'] / resolution), \
                         robot_pose['y_px'] - int(origin['y'] / resolution)]
 
@@ -123,6 +124,8 @@ class TargetSelection:
         costs = c_dist * w_dist + c_turn * w_turn
 
         min_dist, min_idx = min(zip(costs, range(len(costs))))
+
+        Print.art_print("Target selection time: " + str(time.time() - tinit), Print.ORANGE)
 
         return goals[min_idx]
 
