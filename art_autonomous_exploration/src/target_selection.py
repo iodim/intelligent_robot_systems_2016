@@ -64,7 +64,7 @@ class TargetSelection:
                 cov_frontier[i, j] = 0
 
         # Save coverage frontier as image (for debugging purposes)
-        scipy.misc.imsave('test.png', np.rot90(cov_frontier))
+        # scipy.misc.imsave('test.png', np.rot90(cov_frontier))
 
         # Frontier detection/grouping
         labeled_frontiers, num_frontiers = scipy.ndimage.label(cov_frontier, np.ones((3, 3)))
@@ -85,9 +85,8 @@ class TargetSelection:
           sum_y = np.sum(points[1])
           goals[i - 1, :] = [sum_x/group_length, sum_y/group_length]
 
-          # ipdb.set_trace()
           # Save centroids for later visualisation (for debugging purposes)
-          labeled_frontiers[int(goals[i - 1, 0]) + i_rng, int(goals[i - 1, 1]) + j_rng] = i
+          # labeled_frontiers[int(goals[i - 1, 0]) + i_rng, int(goals[i - 1, 1]) + j_rng] = i
 
           # Manhattan distance
           w_dist[i - 1] = scipy.spatial.distance.cityblock(goals[i - 1, :], g_robot_pose)
@@ -103,10 +102,10 @@ class TargetSelection:
           w_turn[i - 1] = np.abs(w_turn[i - 1])
 
         # Save frontier groupings as an image (for debugging purposes)
-        cmap = plt.cm.jet
-        norm = plt.Normalize(vmin=labeled_frontiers.min(), vmax=labeled_frontiers.max())
-        image = cmap(norm(labeled_frontiers))
-        plt.imsave('erma.png', np.rot90(image))
+        # cmap = plt.cm.jet
+        # norm = plt.Normalize(vmin=labeled_frontiers.min(), vmax=labeled_frontiers.max())
+        # image = cmap(norm(labeled_frontiers))
+        # plt.imsave('erma.png', np.rot90(image))
 
         # Remove invalid goals and weights
         valids = w_dist != -1
