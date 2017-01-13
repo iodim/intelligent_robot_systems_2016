@@ -110,8 +110,8 @@ class RobotController:
       self.angular_velocity = 0
 
       # Obstacle avoidacnce constants
-      c_l = 0.2
-      c_a = 0.7
+      c_l = 0.1
+      c_a = 0.2
 
       if self.move_with_target == True:
         [l_goal, a_goal] = self.navigation.velocitiesToNextSubtarget()

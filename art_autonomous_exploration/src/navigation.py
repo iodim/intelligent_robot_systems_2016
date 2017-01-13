@@ -307,8 +307,8 @@ class Navigation:
             omega = (theta_rg - theta)/np.pi
 
           # Nonlinear relations derived from experimentation
-          linear = l_max * ((1 - np.abs(omega)) ** 4)
-          angular = a_max * np.sign(omega) * (abs(omega) ** (1/3))
+          linear = l_max * ((1 - np.abs(omega)) ** 5)
+          angular = a_max * np.sign(omega) * (abs(omega) ** (1/5))
         ######################### NOTE: QUESTION  ##############################
 
         return [linear, angular]
