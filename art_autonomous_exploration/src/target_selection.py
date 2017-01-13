@@ -84,7 +84,11 @@ class TargetSelection:
             continue
           sum_x = np.sum(points[0])
           sum_y = np.sum(points[1])
-          goals[i - 1, :] = [sum_x/group_length, sum_y/group_length]
+          centroid = np.array([sum_x/group_length, sum_y/group_length]).reshape(2, 1)
+
+          # Find the point on the frontier nearest (2-norm) to the centroid, and use it as goal
+          nearest_idx = np.linalg.norm(np.array(points) - centroid, axis=0).argmin()
+          goals[i - 1, :] = np.array([points[0][nearest_idx], points[1][nearest_idx]])
 
           # Save centroids for later visualisation (for debugging purposes)
           # labeled_frontiers[int(goals[i - 1, 0]) + i_rng, int(goals[i - 1, 1]) + j_rng] = i
@@ -123,7 +127,8 @@ class TargetSelection:
         c_turn = 2
         costs = c_dist * w_dist + c_turn * w_turn
 
-        min_dist, min_idx = min(zip(costs, range(len(costs))))
+        # min_dist, min_idx = min(zip(costs, range(len(costs))))
+        min_idx = costs.argmin()
 
         Print.art_print("Target selection time: " + str(time.time() - tinit), Print.ORANGE)
 
