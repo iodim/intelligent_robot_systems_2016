@@ -112,10 +112,12 @@ class TargetSelection:
         # Frontier detection/grouping
         labeled_frontiers, num_frontiers = scipy.ndimage.label(cov_frontier, np.ones((3, 3)))
 
-        # Calculate the centroid and its cost, for each frontier
         goals = np.full((num_frontiers, 2), -1)
         w_dist = np.full(len(goals), -1)
         w_turn = np.full(len(goals), -1)
+        w_size = np.full(len(goals), -1)
+
+        # Calculate the centroid and its cost, for each frontier
         for i in range(1, num_frontiers + 1):
           points = np.where(labeled_frontiers == i)
 
@@ -148,6 +150,9 @@ class TargetSelection:
           # We don't care about the missalignment direction so we abs() it
           w_turn[i - 1] = np.abs(w_turn[i - 1])
 
+          # Frontier size
+          w_size[i - 1] = group_length
+
         # Save frontier groupings as an image (for debugging purposes)
         # cmap = plt.cm.jet
         # norm = plt.Normalize(vmin=labeled_frontiers.min(), vmax=labeled_frontiers.max())
@@ -159,17 +164,19 @@ class TargetSelection:
         goals = goals[valids]
         w_dist = w_dist[valids]
         w_turn = w_turn[valids]
+        w_size = w_size[valids]
 
         # Normalize weights
         w_dist = (w_dist - min(w_dist))/(max(w_dist) - min(w_dist))
         w_turn = (w_turn - min(w_turn))/(max(w_turn) - min(w_turn))
+        w_size = 1 - (w_size - min(w_size))/(max(w_size) - min(w_size))
 
         # Goal cost function
-        c_dist = 1
-        c_turn = 2
-        costs = c_dist * w_dist + c_turn * w_turn
+        c_dist = 1.2
+        c_turn = 1.35
+        c_size = 0.8
+        costs = c_dist * w_dist + c_turn * w_turn + c_size * w_size
 
-        # min_dist, min_idx = min(zip(costs, range(len(costs))))
         min_idx = costs.argmin()
 
         Print.art_print("Target selection time: " + str(time.time() - tinit), Print.ORANGE)
