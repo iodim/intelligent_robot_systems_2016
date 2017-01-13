@@ -188,7 +188,6 @@ class Navigation:
           start = time.time()
           target = self.target_selection.selectTarget(\
                     local_ogm,\
-                    local_ros_ogm,\
                     local_coverage,\
                     self.robot_perception.robot_pose,
                     self.robot_perception.origin,

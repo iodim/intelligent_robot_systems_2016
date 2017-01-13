@@ -34,7 +34,7 @@ class TargetSelection:
         self.path_planning = PathPlanning()
 
 
-    def selectTarget(self, init_ogm, ros_ogm, coverage, robot_pose, origin, \
+    def selectTarget(self, ogm, coverage, robot_pose, origin, \
         resolution, force_random = False):
 
         # Random point
@@ -61,7 +61,7 @@ class TargetSelection:
         for i in range((kern/2), cov_frontier.shape[0] - (kern/2)):
           for j in range((kern/2) , cov_frontier.shape[1] - (kern/2)):
             if cov_frontier[i, j] == 100:
-              if np.any(init_ogm[i + i_rng, j + j_rng] > 99):
+              if np.any(ogm[i + i_rng, j + j_rng] > 99):
                 cov_frontier[i, j] = 0
 
         # Save coverage frontier as image (for debugging purposes)
