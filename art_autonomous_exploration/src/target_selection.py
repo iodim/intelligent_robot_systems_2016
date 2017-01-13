@@ -39,6 +39,48 @@ class TargetSelection:
 
         # Random point
         if self.method == 'random' or force_random == True:
+
+          # Find only the useful boundaries of OGM. Only there calculations
+          # have meaning
+          ogm_limits = OgmOperations.findUsefulBoundaries(init_ogm, origin, resolution)
+
+          # Blur the OGM to erase discontinuities due to laser rays
+          ogm = OgmOperations.blurUnoccupiedOgm(init_ogm, ogm_limits)
+
+          # Calculate Brushfire field
+          tinit = time.time()
+          brush = self.brush.obstaclesBrushfireCffi(ogm, ogm_limits)
+          Print.art_print("Brush time: " + str(time.time() - tinit), Print.ORANGE)
+
+          # Calculate skeletonization
+          tinit = time.time()
+          skeleton = self.topo.skeletonizationCffi(ogm, \
+                     origin, resolution, ogm_limits)
+          Print.art_print("Skeletonization time: " + str(time.time() - tinit), Print.ORANGE)
+
+          # Find topological graph
+          tinit = time.time()
+          nodes = self.topo.topologicalNodes(ogm, skeleton, coverage, origin, \
+                  resolution, brush, ogm_limits)
+          Print.art_print("Topo nodes time: " + str(time.time() - tinit), Print.ORANGE)
+
+          # Visualization of topological nodes
+          vis_nodes = []
+          for n in nodes:
+              vis_nodes.append([
+                  n[0] * resolution + origin['x'],
+                  n[1] * resolution + origin['y']
+              ])
+          RvizHandler.printMarker(\
+              vis_nodes,\
+              1, # Type: Arrow
+              0, # Action: Add
+              "map", # Frame
+              "art_topological_nodes", # Namespace
+              [0.3, 0.4, 0.7, 0.5], # Color RGBA
+              0.1 # Scale
+          )
+
           target = self.selectRandomTarget(ogm, coverage, brush, ogm_limits)
           return target
 
