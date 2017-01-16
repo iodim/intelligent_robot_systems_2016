@@ -16,6 +16,10 @@ class SonarDataAggregator:
         self.sonar_rear_left_range = 0
         self.sonar_rear_right_range = 0
 
+        # Hardcode Sonar Angles (Not contained in published message)
+        # Sequence : [sonar0, sonar1, ..., sonar4]
+        self.sonar_angles = [0, 1.5708, -1.5708, 2.79252, 3.49066]
+
         # ROS Subscribers to the robot's sonars
         rospy.Subscriber(rospy.get_param('sonar_front_topic'), Range, \
                 self.getDataSonarFront) 

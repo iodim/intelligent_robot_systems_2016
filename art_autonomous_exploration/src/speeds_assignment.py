@@ -82,6 +82,37 @@ class RobotController:
       ##########################################################################
       return [linear, angular]
 
+    # Produces speeds from the sonars
+    def produceSpeedsSonars(self):
+
+      # Mask for sonar usage
+      mask = np.array([0,0,0,1,1])  # only rear sonars config
+      N    = sum(mask)
+
+      # Read Sonar Angles
+      angles = np.array(self.sonar_aggregation.sonar_angles)
+
+      # Read Scans
+      ranges = [self.sonar_aggregation.sonar_front_range,    \
+                self.sonar_aggregation.sonar_left_range,     \
+                self.sonar_aggregation.sonar_right_range,    \
+                self.sonar_aggregation.sonar_rear_left_range,\
+                self.sonar_aggregation.sonar_rear_right_range]
+
+      # Normallization
+      ranges = list(map(self.sonarNormalization,ranges))
+      ranges = np.array(ranges)
+
+      # Speed Calculation
+      linear  = -sum(np.cos(angles)*ranges*mask)/N  # linear speed
+      angular = -sum(np.sin(angles)*ranges*mask)/N  # angular speed
+
+      # Normallization to robot's allowed speeds
+      linear  = 0.3*linear
+      angular = 0.3*angular
+
+      return [linear, angular]
+
     # Combines the speeds into one output using a motor schema approach
     def produceSpeeds(self):
 
@@ -105,6 +136,9 @@ class RobotController:
       # Get the submodule's speeds
       [l_laser, a_laser] = self.produceSpeedsLaser()
 
+      # Get Sonar Speeds:
+      [l_sonar, a_sonar] = self.produceSpeedsSonars()
+
       # You must fill these
       self.linear_velocity  = 0
       self.angular_velocity = 0
@@ -118,8 +152,8 @@ class RobotController:
         ############################### NOTE QUESTION ############################
         # You must combine the two sets of speeds. You can use motor schema,
         # subsumption of whatever suits your better.
-        self.linear_velocity = l_goal + c_l * l_laser
-        self.angular_velocity = a_goal + c_a * a_laser
+        self.linear_velocity = l_goal + c_l * l_laser + l_sonar
+        self.angular_velocity = a_goal + c_a * a_laser + a_sonar
         ##########################################################################
       else:
         ############################### NOTE QUESTION ############################
@@ -139,3 +173,15 @@ class RobotController:
 
     def resumeRobot(self):
       self.stop_robot = False
+
+    def sonarNormalization(self,r):
+      if r <= 0.15:
+        return 1
+      elif r > 0.15 and r <= 0.3:
+        return -5.33333*r + 1.8
+      elif r > 0.3 and r <= 0.5:
+        return -1.5*(r - 0.5)
+      else:
+        return 0
+        
+
