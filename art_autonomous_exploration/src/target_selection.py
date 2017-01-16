@@ -171,17 +171,19 @@ class TargetSelection:
         # Normalize weights
         w_dist = (w_dist - min(w_dist))/(max(w_dist) - min(w_dist))
         w_turn = (w_turn - min(w_turn))/(max(w_turn) - min(w_turn))
-        w_size = 1 - (w_size - min(w_size))/(max(w_size) - min(w_size))
+        w_size = (w_size - min(w_size))/(max(w_size) - min(w_size))
 
         # Goal cost function
-        c_dist = 1.2
-        c_turn = 1.35
-        c_size = 0.8
+        c_dist = 3
+        c_turn = 2
+        c_size = 1
         costs = c_dist * w_dist + c_turn * w_turn + c_size * w_size
 
         min_idx = costs.argmin()
 
         Print.art_print("Target selection time: " + str(time.time() - tinit), Print.ORANGE)
+        # print costs
+        # print goals[min_idx]
 
         return goals[min_idx]
 
