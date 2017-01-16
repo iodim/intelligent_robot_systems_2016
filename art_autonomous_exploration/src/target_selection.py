@@ -40,6 +40,8 @@ class TargetSelection:
         # Random point
         if self.method == 'random' or force_random == True:
 
+          init_ogm = ogm
+
           # Find only the useful boundaries of OGM. Only there calculations
           # have meaning
           ogm_limits = OgmOperations.findUsefulBoundaries(init_ogm, origin, resolution)
