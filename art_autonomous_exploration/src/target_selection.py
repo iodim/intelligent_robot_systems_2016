@@ -15,7 +15,7 @@ from topology import Topology
 from path_planning import PathPlanning
 
 import matplotlib.pyplot as plt
-
+from bresenham import bresenham
 import ipdb
 
 # Class for selecting the next best target
@@ -118,6 +118,7 @@ class TargetSelection:
         w_dist = np.full(len(goals), -1)
         w_turn = np.full(len(goals), -1)
         w_size = np.full(len(goals), -1)
+        w_obst = np.full(len(goals), -1)
 
         # Calculate the centroid and its cost, for each frontier
         for i in range(1, num_frontiers + 1):
@@ -138,6 +139,19 @@ class TargetSelection:
 
           # Save centroids for later visualisation (for debugging purposes)
           # labeled_frontiers[int(goals[i - 1, 0]) + i_rng, int(goals[i - 1, 1]) + j_rng] = i
+
+          # Calculate size of obstacles between robot and goal
+          line_pxls = list(bresenham(int(goals[i-1,0]), int(goals[i-1,1]),\
+                                     g_robot_pose[0], g_robot_pose[1]))
+
+          ogm_line = list(map(lambda pxl: ogm[pxl[0],pxl[1]],line_pxls))
+
+          N_occupied = len(list(filter(lambda x: x>25, ogm_line)))
+          N_line     = len(line_pxls)
+          w_obst[i-1] = float(N_occupied)/N_line
+          # print('Occupied  = '+str(N_occupied))
+          # print('Full Line = '+str(N_line))
+          # ipdb.set_trace()
 
           # Manhattan distance
           w_dist[i - 1] = scipy.spatial.distance.cityblock(goals[i - 1, :], g_robot_pose)
@@ -167,6 +181,7 @@ class TargetSelection:
         w_dist = w_dist[valids]
         w_turn = w_turn[valids]
         w_size = w_size[valids]
+        w_obst = w_obst[valids]
 
         # Normalize weights
         w_dist = (w_dist - min(w_dist))/(max(w_dist) - min(w_dist))
@@ -177,7 +192,8 @@ class TargetSelection:
         c_dist = 3
         c_turn = 2
         c_size = 1
-        costs = c_dist * w_dist + c_turn * w_turn + c_size * w_size
+        c_obst = 4
+        costs = c_dist * w_dist + c_turn * w_turn + c_size * w_size+ c_obst * w_obst
 
         min_idx = costs.argmin()
 
@@ -202,4 +218,20 @@ class TargetSelection:
         Print.art_print("Select random target time: " + str(time.time() - tinit), \
             Print.ORANGE)
         return next_target
+
+    def lineOccupation(self,ogm_line):
+        occupied = 0
+        potentially_occupied = 0
+        found_obstacle = False
+        for grid in ogm_line:
+            if grid > 90:
+                occupied_cells += 1 + potentially_occupied
+            elif grid < 55 and grid > 45 and found_obstacle:
+                potentially_occupied += 1
+            elif grid < 20:
+                potentially_occupied = 0
+                found_obstacle = False
+        return occupied
+
+
 
