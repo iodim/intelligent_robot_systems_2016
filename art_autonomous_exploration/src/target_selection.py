@@ -92,14 +92,17 @@ class TargetSelection:
                         robot_pose['y_px'] - int(origin['y'] / resolution)]
 
         # Calculate coverage frontier with sobel filters
+        tinit = time.time()
         cov_dx = scipy.ndimage.sobel(coverage, 0)
         cov_dy = scipy.ndimage.sobel(coverage, 1)
         cov_frontier = np.hypot(cov_dx, cov_dy)
         cov_frontier *= 100 / np.max(cov_frontier)
         cov_frontier = 100 * (cov_frontier > 80)
+        Print.art_print("Sobel filters time: " + str(time.time() - tinit), Print.BLUE)
 
         # Remove the edges that correspond to obstacles instead of frontiers (in a 5x5 radius)
         kern = 5
+        tinit = time.time()
         i_rng = np.matlib.repmat(np.arange(-(kern/2), kern/2 + 1).reshape(kern, 1), 1, kern)
         j_rng = np.matlib.repmat(np.arange(-(kern/2), kern/2 + 1), kern, 1)
         for i in range((kern/2), cov_frontier.shape[0] - (kern/2)):
@@ -107,12 +110,15 @@ class TargetSelection:
             if cov_frontier[i, j] == 100:
               if np.any(ogm[i + i_rng, j + j_rng] > 99):
                 cov_frontier[i, j] = 0
+        Print.art_print("Frontier trimming time: " + str(time.time() - tinit), Print.BLUE)
 
         # Save coverage frontier as image (for debugging purposes)
         # scipy.misc.imsave('test.png', np.rot90(cov_frontier))
 
         # Frontier detection/grouping
+        tinit = time.time()
         labeled_frontiers, num_frontiers = scipy.ndimage.label(cov_frontier, np.ones((3, 3)))
+        Print.art_print("Frontier grouping time: " + str(time.time() - tinit), Print.BLUE)
 
         goals = np.full((num_frontiers, 2), -1)
         w_dist = np.full(len(goals), -1)
@@ -138,7 +144,7 @@ class TargetSelection:
           goals[i - 1, :] = np.array([points[0][nearest_idx], points[1][nearest_idx]])
 
           # Save centroids for later visualisation (for debugging purposes)
-          # labeled_frontiers[int(goals[i - 1, 0]) + i_rng, int(goals[i - 1, 1]) + j_rng] = i
+          labeled_frontiers[int(goals[i - 1, 0]) + i_rng, int(goals[i - 1, 1]) + j_rng] = i
 
           # Calculate size of obstacles between robot and goal
           line_pxls = list(bresenham(int(goals[i-1,0]), int(goals[i-1,1]),\
@@ -170,10 +176,10 @@ class TargetSelection:
           w_size[i - 1] = group_length
 
         # Save frontier groupings as an image (for debugging purposes)
-        # cmap = plt.cm.jet
-        # norm = plt.Normalize(vmin=labeled_frontiers.min(), vmax=labeled_frontiers.max())
-        # image = cmap(norm(labeled_frontiers))
-        # plt.imsave('erma.png', np.rot90(image))
+        cmap = plt.cm.jet
+        norm = plt.Normalize(vmin=labeled_frontiers.min(), vmax=labeled_frontiers.max())
+        image = cmap(norm(labeled_frontiers))
+        plt.imsave('frontiers.png', np.rot90(image))
 
         # Remove invalid goals and weights
         valids = w_dist != -1
@@ -198,8 +204,8 @@ class TargetSelection:
         min_idx = costs.argmin()
 
         Print.art_print("Target selection time: " + str(time.time() - tinit), Print.ORANGE)
-        # print costs
-        # print goals[min_idx]
+        print costs
+        print goals
 
         return goals[min_idx]
 
