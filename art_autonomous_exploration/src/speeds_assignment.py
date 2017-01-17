@@ -34,6 +34,9 @@ class RobotController:
       self.linear_velocity  = 0
       self.angular_velocity = 0
 
+      # Force robot to perform a 360d turn when starting
+      self.initialTurn = True
+
       # Check if the robot moves with target or just wanders
       self.move_with_target = rospy.get_param("calculate_target")
 
@@ -115,6 +118,20 @@ class RobotController:
 
     # Combines the speeds into one output using a motor schema approach
     def produceSpeeds(self):
+
+      if self.initialTurn == True:
+        # Read and convert theta to (0, 2*pi)
+        theta = self.navigation.robot_perception.robot_pose['th']
+        if theta < 0:
+          theta += 2*np.pi
+
+        # Turn completed when theta is in (340,360) else, turn around
+        if theta > 5.9341 and theta < 2*np.pi:
+          self.initialTurn = False
+        else:
+         self.angular_velocity = 0.3
+         return 
+
 
       # Produce target if not existent
       if self.move_with_target == True and \
