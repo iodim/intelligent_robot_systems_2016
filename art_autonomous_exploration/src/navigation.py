@@ -12,6 +12,7 @@ from utilities import Print
 
 import ipdb
 from bresenham import bresenham
+import threading
 
 from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped
@@ -46,8 +47,6 @@ class Navigation:
 
         self.count_limit = 200 # 20 sec
 
-        self.counter_to_next_sub = self.count_limit
-
         # Check if subgoal is reached via a timer callback
         rospy.Timer(rospy.Duration(0.10), self.checkTarget)
 
@@ -71,25 +70,26 @@ class Navigation:
             rospy.Publisher(rospy.get_param('curr_target_pub_topic'),\
             Marker, queue_size = 10)
 
+        # Timer Thread (initialization)
+        self.timerThread = threading.Timer(20.0,self.cancelGoal)
+        self.timeExpired = False
+
     def checkTarget(self, event):
         # Check if we have a target or if the robot just wanders
         if self.inner_target_exists == False or self.move_with_target == False or\
                 self.next_subtarget == len(self.subtargets):
           return
 
-        print(str(self.counter_to_next_sub))
-        self.counter_to_next_sub -= 1
 
-        if self.counter_to_next_sub == 0:
+        # Check if timer has expired
+        if self.timeExpired == True:
           Print.art_print('\n~~~~ Time reset ~~~~',Print.RED)
           self.inner_target_exists = False
           self.target_exists = False
           return
 
         # Get the occupancy grid map
-        t0 = time.time()
         ogm = self.robot_perception.getMap()
-        t1 = time.time()
 
 
         # Get the robot pose in pixels
@@ -137,16 +137,11 @@ class Navigation:
         min_dist, min_idx = min(zip(dist, range(len(dist))))
 
 
-        ######################### NOTE: IMPROVE BEHAVIOUR	  ##############################
         # Check if one of next goals is aligned with the current robot theta
         # In this case plan immediatly for this goal in order to improve motion behaviour
         for st,i in zip(self.subtargets,range(len(self.subtargets))):
           if np.fabs(dtheta[i])<np.pi/10 and obstacles_subtarget[i]==0:
             self.next_subtarget = i
-
-
-
-        ########################################################################
 
         ######################### NOTE: QUESTION  ##############################
         # What if a later subtarget or the end has been reached before the
@@ -154,6 +149,8 @@ class Navigation:
         # Check if distance is less than 7 px (14 cm)
         if min_dist < 5:
           self.next_subtarget = min_idx + 1
+
+          # Threading Equivellant ?
           self.counter_to_next_sub = self.count_limit
           # Check if the final subtarget has been approached
           if self.next_subtarget == len(self.subtargets):
@@ -187,6 +184,10 @@ class Navigation:
     # the coverage field. This is called from the speeds assignment code, since
     # it contains timer callbacks
     def selectTarget(self):
+
+        # Cancel previous goal timer
+        self.timerThread.cancel()
+
         # IMPORTANT: The robot must be stopped if you call this function until
         # it is over
         # Check if we have a map
@@ -268,7 +269,10 @@ class Navigation:
         # may not be desired for coverage-based exploration
         ########################################################################
 
-        self.counter_to_next_sub = self.count_limit
+        # Start timer thread
+        self.timeExpired = False
+        self.timerThread = threading.Timer(20.0,self.cancelGoal)
+        self.timerThread.start()
 
         # Publish the path for visualization purposes
         ros_path = Path()
@@ -357,4 +361,8 @@ class Navigation:
 
         return [linear, angular]
 
+    # Timer thread callback
+    def cancelGoal(self):
+      self.timeExpired = True
+      return
 
