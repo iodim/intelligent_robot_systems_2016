@@ -11,6 +11,7 @@ from utilities import RvizHandler
 from utilities import Print
 
 import ipdb
+from bresenham import bresenham
 
 from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped
@@ -76,6 +77,7 @@ class Navigation:
                 self.next_subtarget == len(self.subtargets):
           return
 
+        print(str(self.counter_to_next_sub))
         self.counter_to_next_sub -= 1
 
         if self.counter_to_next_sub == 0:
@@ -84,6 +86,12 @@ class Navigation:
           self.target_exists = False
           return
 
+        # Get the occupancy grid map
+        t0 = time.time()
+        ogm = self.robot_perception.getMap()
+        t1 = time.time()
+
+
         # Get the robot pose in pixels
         [rx, ry] = [\
             self.robot_perception.robot_pose['x_px'] - \
@@ -91,6 +99,8 @@ class Navigation:
             self.robot_perception.robot_pose['y_px'] - \
                     self.robot_perception.origin['y'] / self.robot_perception.resolution\
                     ]
+
+        theta_robot = self.robot_perception.robot_pose['th']
 
         # Clear achieved targets
         self.subtargets = self.subtargets[self.next_subtarget:]
@@ -101,8 +111,42 @@ class Navigation:
         dy = [ry - st[1] for st in self.subtargets]
         dist = [math.hypot(v[0], v[1]) for v in zip(dx, dy)]
 
+        # Goal Angles
+        theta_goals = np.arctan2(-np.array(dy),-np.array(dx))
+        dtheta      = theta_goals - theta_robot
+        dtheta[dtheta > np.pi] -= 2*np.pi
+        dtheta[dtheta < -np.pi] += 2*np.pi
+        print('Dtheta = '+str(dtheta))
+
+        # Check if there are obstacles between robot and subtarget
+        obstacles_subtarget = []
+        for st,i in zip(self.subtargets,range(len(self.subtargets))):
+          # Find line in pixels between robot and goal
+          line_pxls = list(bresenham(int(round(st[0])), int(round(st[1])),\
+                                     int(round(rx)), int(round(ry))))
+          
+          # Find if there are any obstacles in line
+          ogm_line   = list(map(lambda pxl: ogm[pxl[0],pxl[1]],line_pxls))
+          N_occupied = len(list(filter(lambda x: x>80, ogm_line)))
+
+          # Append to list:
+          obstacles_subtarget.append(N_occupied)
+
+
         # Check if any target is in distance
         min_dist, min_idx = min(zip(dist, range(len(dist))))
+
+
+        ######################### NOTE: IMPROVE BEHAVIOUR	  ##############################
+        # Check if one of next goals is aligned with the current robot theta
+        # In this case plan immediatly for this goal in order to improve motion behaviour
+        for st,i in zip(self.subtargets,range(len(self.subtargets))):
+          if np.fabs(dtheta[i])<np.pi/10 and obstacles_subtarget[i]==0:
+            self.next_subtarget = i
+
+
+
+        ########################################################################
 
         ######################### NOTE: QUESTION  ##############################
         # What if a later subtarget or the end has been reached before the
