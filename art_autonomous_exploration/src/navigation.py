@@ -9,10 +9,10 @@ from target_selection import TargetSelection
 from path_planning import PathPlanning
 from utilities import RvizHandler
 from utilities import Print
+from utilities import TimerThread
 
 import ipdb
 from bresenham import bresenham
-import threading
 
 from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped
@@ -45,7 +45,7 @@ class Navigation:
         # Container for the next subtarget. Holds the index of the next subtarget
         self.next_subtarget = 0
 
-        self.count_limit = 200 # 20 sec
+        self.time_limit = 20 # seconds
 
         # Check if subgoal is reached via a timer callback
         rospy.Timer(rospy.Duration(0.10), self.checkTarget)
@@ -71,8 +71,7 @@ class Navigation:
             Marker, queue_size = 10)
 
         # Timer Thread (initialization)
-        self.timerThread = threading.Timer(20.0,self.cancelGoal)
-        self.timeExpired = False
+        self.timerThread = TimerThread(self.time_limit)
 
     def checkTarget(self, event):
         # Check if we have a target or if the robot just wanders
@@ -80,17 +79,12 @@ class Navigation:
                 self.next_subtarget == len(self.subtargets):
           return
 
-
         # Check if timer has expired
-        if self.timeExpired == True:
+        if self.timerThread.expired == True:
           Print.art_print('\n~~~~ Time reset ~~~~',Print.RED)
           self.inner_target_exists = False
           self.target_exists = False
           return
-
-        # Get the occupancy grid map
-        ogm = self.robot_perception.getMap()
-
 
         # Get the robot pose in pixels
         [rx, ry] = [\
@@ -111,51 +105,44 @@ class Navigation:
         dy = [ry - st[1] for st in self.subtargets]
         dist = [math.hypot(v[0], v[1]) for v in zip(dx, dy)]
 
-        # Goal Angles
-        theta_goals = np.arctan2(-np.array(dy),-np.array(dx))
-        dtheta      = theta_goals - theta_robot
-        dtheta[dtheta > np.pi] -= 2*np.pi
-        dtheta[dtheta < -np.pi] += 2*np.pi
-        print('Dtheta = '+str(dtheta))
+        # Try to optimize path only when there is more than one target available
+        if len(self.subtargets) > 1:
+          ogm = self.robot_perception.getMap()
 
-        # Check if there are obstacles between robot and subtarget
-        obstacles_subtarget = []
-        for st,i in zip(self.subtargets,range(len(self.subtargets))):
-          # Find line in pixels between robot and goal
-          line_pxls = list(bresenham(int(round(st[0])), int(round(st[1])),\
-                                     int(round(rx)), int(round(ry))))
-          
-          # Find if there are any obstacles in line
-          ogm_line   = list(map(lambda pxl: ogm[pxl[0],pxl[1]],line_pxls))
-          N_occupied = len(list(filter(lambda x: x>80, ogm_line)))
+          theta_goals = np.arctan2(-np.array(dy),-np.array(dx))
+          dtheta = theta_goals - theta_robot
+          dtheta[dtheta > np.pi] -= 2*np.pi
+          dtheta[dtheta < -np.pi] += 2*np.pi
 
-          # Append to list:
-          obstacles_subtarget.append(N_occupied)
+          # Check if there are obstacles between robot and subtarget
+          obstacles_subtarget = []
+          for st,i in zip(self.subtargets, range(len(self.subtargets))):
+            # Find line in pixels between robot and goal
+            line_pxls = list(bresenham(int(round(st[0])), int(round(st[1])),\
+                                       int(round(rx)), int(round(ry))))
+            # Find if there are any obstacles in line
+            ogm_line = list(map(lambda pxl: ogm[pxl[0], pxl[1]], line_pxls))
+            N_occupied = len(list(filter(lambda x: x > 80, ogm_line)))
+            obstacles_subtarget.append(N_occupied)
 
+          # Check if one of next goals is aligned with the current robot theta
+          # In this case plan immediately for this goal in order to improve motion behaviour
+          for st, i in zip(self.subtargets, range(len(self.subtargets))):
+            if np.fabs(dtheta[i]) < np.pi/10 and obstacles_subtarget[i] == 0:
+              self.next_subtarget = i
+              # Keep resetting  timer, while moving towards target (without any obstacles inbetween)
+              self.timerThread.reset()
 
         # Check if any target is in distance
         min_dist, min_idx = min(zip(dist, range(len(dist))))
 
-
-        # Check if one of next goals is aligned with the current robot theta
-        # In this case plan immediatly for this goal in order to improve motion behaviour
-        for st,i in zip(self.subtargets,range(len(self.subtargets))):
-          if np.fabs(dtheta[i])<np.pi/10 and obstacles_subtarget[i]==0:
-            self.next_subtarget = i
-
-        ######################### NOTE: QUESTION  ##############################
-        # What if a later subtarget or the end has been reached before the
-        # next subtarget? Alter the code accordingly.
-        # Check if distance is less than 7 px (14 cm)
         if min_dist < 5:
           self.next_subtarget = min_idx + 1
-
-          # Threading Equivellant ?
-          self.counter_to_next_sub = self.count_limit
+          # Reset timer if a goal has been reached
+          self.timerThread.reset()
           # Check if the final subtarget has been approached
-          if self.next_subtarget == len(self.subtargets):
+          if self.next_subtarget >= len(self.subtargets):
             self.target_exists = False
-        ########################################################################
 
         # Publish the current target
         if self.next_subtarget >= len(self.subtargets):
@@ -186,7 +173,7 @@ class Navigation:
     def selectTarget(self):
 
         # Cancel previous goal timer
-        self.timerThread.cancel()
+        self.timerThread.stop()
 
         # IMPORTANT: The robot must be stopped if you call this function until
         # it is over
@@ -270,8 +257,6 @@ class Navigation:
         ########################################################################
 
         # Start timer thread
-        self.timeExpired = False
-        self.timerThread = threading.Timer(20.0,self.cancelGoal)
         self.timerThread.start()
 
         # Publish the path for visualization purposes
@@ -360,9 +345,3 @@ class Navigation:
         ######################### NOTE: QUESTION  ##############################
 
         return [linear, angular]
-
-    # Timer thread callback
-    def cancelGoal(self):
-      self.timeExpired = True
-      return
-

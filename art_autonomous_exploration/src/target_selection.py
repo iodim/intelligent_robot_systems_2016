@@ -141,6 +141,7 @@ class TargetSelection:
 
           # Find the point on the frontier nearest (2-norm) to the centroid, and use it as goal
           nearest_idx = np.linalg.norm(np.array(points) - centroid, axis=0).argmin()
+          print ogm[int(points[0][nearest_idx]), int(points[1][nearest_idx])]
           goals[i - 1, :] = np.array([points[0][nearest_idx], points[1][nearest_idx]])
 
           # Save centroids for later visualisation (for debugging purposes)

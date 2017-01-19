@@ -9,6 +9,8 @@ from timeit import default_timer as timer
 from visualization_msgs.msg import Marker
 from visualization_msgs.msg import MarkerArray
 
+import threading
+
 from _cpp_functions import ffi, lib
 
 class Print:
@@ -25,6 +27,33 @@ class Print:
     def art_print(txt, color):
       print color + str(txt) + Print.END
 
+class TimerThread:
+    def __init__(self, timeout=20):
+      self.timeout = timeout
+      self._expired = True
+      self.timerThread = threading.Timer(self.timeout, self.timeout_reached)
+
+    def start(self):
+      self._expired = False
+      self.timerThread = threading.Timer(self.timeout, self.timeout_reached)
+      self.timerThread.start()
+
+    def reset(self):
+      self.timerThread.cancel()
+      self._expired = False
+      self.timerThread = threading.Timer(self.timeout, self.timeout_reached)
+      self.timerThread.start()
+
+    def stop(self):
+      self.timerThread.cancel()
+
+    def timeout_reached(self):
+      self._expired = True
+
+    @property
+    def expired(self):
+      return self._expired
+
 class Cffi:
     @staticmethod
     def brushfireFromObstacles(ogm, brush, ogml):
@@ -39,7 +68,7 @@ class Cffi:
       for i in range(len(y)):
         yi[i] = ffi.cast("int *", y[i].ctypes.data)
 
-      br_c = lib.brushfireFromObstacles(xi, yi, len(x), len(x[0]), 
+      br_c = lib.brushfireFromObstacles(xi, yi, len(x), len(x[0]),
           ogml['min_x'], ogml['max_x'], ogml['min_y'], ogml['max_y'])
       # TODO: Must be faster!
       for i in range(ogm.shape[0]):
@@ -87,7 +116,7 @@ class Cffi:
 
       br_c = lib.prune(xi, yi, len(x), len(x[0]),
           ogml['min_x'], ogml['max_x'], ogml['min_y'], ogml['max_y'], iterations)
-      
+
       # TODO: Must be faster!
       for i in range(skeleton.shape[0]):
         for j in range(skeleton.shape[1]):
@@ -118,7 +147,7 @@ class OgmOperations:
       min_y = origin['y'] / resolution
       max_x = origin['x'] / resolution
       max_y = origin['y'] / resolution
-      
+
       x = ogm.shape[0]
       y = ogm.shape[1]
 
@@ -175,15 +204,15 @@ class OgmOperations:
                     min_y * resolution + origin['y']
                 ],
                 [
-                    max_x * resolution + origin['x'], 
+                    max_x * resolution + origin['x'],
                     min_y * resolution + origin['y']
                 ],
                 [
-                    max_x * resolution + origin['x'], 
+                    max_x * resolution + origin['x'],
                     max_y * resolution + origin['y']
                 ],
                 [
-                    min_x * resolution + origin['x'], 
+                    min_x * resolution + origin['x'],
                     max_y * resolution + origin['y']
                 ]
             ],\
@@ -197,9 +226,9 @@ class OgmOperations:
 
 
       return {
-          'min_x': min_x, 
-          'max_x': max_x, 
-          'min_y': min_y, 
+          'min_x': min_x,
+          'max_x': max_x,
+          'min_y': min_y,
           'max_y': max_y
           }
 
