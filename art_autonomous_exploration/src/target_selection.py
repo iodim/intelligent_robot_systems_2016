@@ -195,6 +195,9 @@ class TargetSelection:
         w_turn = (w_turn - min(w_turn))/(max(w_turn) - min(w_turn))
         w_size = (w_size - min(w_size))/(max(w_size) - min(w_size))
 
+        # Cancel turn weight for frontiers that have obstacles
+        w_turn[np.where(w_obst!=0)] = 1
+
         # Goal cost function
         c_dist = 3
         c_turn = 2
