@@ -208,7 +208,35 @@ class TargetSelection:
         print costs
         print goals
 
-        return goals[min_idx]
+        ## Safety Distance from obstacles 
+        # Goal Coordinates
+        x_goal = goals[min_idx,0]
+        y_goal = goals[min_idx,1]
+
+        # Obstacles in a 40x40 neighborhood
+        ogm_segment = ogm[y_goal-20: y_goal+20, y_goal-20: y_goal+20]
+        obs_idxs = np.where(ogm_segment > 80)
+
+        # If there are no obstacles terminate normally
+        if obs_idxs[0].size == 0:
+            return goals[min_idx]
+
+
+        obs_idxs = np.array([obs_idxs[0],obs_idxs[1]]).transpose()
+
+        # Find closest obstacle
+        distances = np.hypot(obs_idxs[0:,0] - 20,obs_idxs[0:,1] - 20)
+        closest_idx = distances.argmin()
+        min_dist = distances.min()
+        closest_obstacle = obs_idxs[closest_idx] - np.array([20,20]) + goals[min_idx]
+
+        # Calculate new goal:
+        dist_from_obstacles = 20
+        normal_vector = goals[min_idx] - closest_obstacle
+        normal_vector = normal_vector/np.hypot(normal_vector[0],normal_vector[1])
+        new_goal = closest_obstacle + dist_from_obstacles * normal_vector
+
+        return new_goal.round()
 
     def selectRandomTarget(self, ogm, coverage, brushogm, ogm_limits):
       # The next target in pixels
