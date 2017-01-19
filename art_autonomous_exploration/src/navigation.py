@@ -216,6 +216,11 @@ class Navigation:
         # Choose target function
         self.path = []
         force_random = False
+
+        # Potential Target
+        path_altered = False
+        previous_target = None
+
         while len(self.path) == 0:
           start = time.time()
           target = self.target_selection.selectTarget(\
@@ -225,6 +230,16 @@ class Navigation:
                     self.robot_perception.origin,
                     self.robot_perception.resolution,
                     force_random)
+
+          # ipdb.set_trace()
+          # Check if there was any path alteration
+          if target[0] == True:
+              previous_target = target[2]
+              target = target[1]
+              path_altered = True
+          else:
+              target = target[1]
+
           self.path = self.path_planning.createPath(\
               g_robot_pose,\
               target,
@@ -303,6 +318,27 @@ class Navigation:
             0.2 # Scale
         )
 
+        # Print Old and Current Final Target
+        if path_altered == True:
+            subt = [
+            previous_target[0] * self.robot_perception.resolution + \
+                    self.robot_perception.origin['x'],
+            previous_target[1] * self.robot_perception.resolution + \
+                    self.robot_perception.origin['y']
+            ]
+            # ipdb.set_trace()
+
+            RvizHandler.printMarker(\
+                [subt],\
+                3, # Type: Sphere
+                0, # Action: Add
+                "map", # Frame
+                "art_subtargets", # Namespace
+                [1.0, 0.0, 0.0, 0.8], # Color RGBA
+                0.2 # Scale
+            )
+
+        # ipdb.set_trace()
         self.inner_target_exists = True
 
     def velocitiesToNextSubtarget(self):

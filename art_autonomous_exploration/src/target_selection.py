@@ -84,7 +84,7 @@ class TargetSelection:
           )
 
           target = self.selectRandomTarget(ogm, coverage, brush, ogm_limits)
-          return target
+          return [False, target]
 
         tinit = time.time()
 
@@ -210,33 +210,31 @@ class TargetSelection:
 
         ## Safety Distance from obstacles 
         # Goal Coordinates
-        x_goal = goals[min_idx,0]
-        y_goal = goals[min_idx,1]
+        grid_size = 20
+        [found_obstacle, closest_obstacle, min_dist] = self.detectObstacles(grid_size, ogm, goals[min_idx])
 
-        # Obstacles in a 40x40 neighborhood
-        ogm_segment = ogm[y_goal-20: y_goal+20, y_goal-20: y_goal+20]
-        obs_idxs = np.where(ogm_segment > 80)
-
-        # If there are no obstacles terminate normally
-        if obs_idxs[0].size == 0:
-            return goals[min_idx]
-
-
-        obs_idxs = np.array([obs_idxs[0],obs_idxs[1]]).transpose()
-
-        # Find closest obstacle
-        distances = np.hypot(obs_idxs[0:,0] - 20,obs_idxs[0:,1] - 20)
-        closest_idx = distances.argmin()
-        min_dist = distances.min()
-        closest_obstacle = obs_idxs[closest_idx] - np.array([20,20]) + goals[min_idx]
+        if found_obstacle == False:
+          return [False, goals[min_idx]]
 
         # Calculate new goal:
-        dist_from_obstacles = 20
+        dist_from_obstacles = 10
         normal_vector = goals[min_idx] - closest_obstacle
         normal_vector = normal_vector/np.hypot(normal_vector[0],normal_vector[1])
         new_goal = closest_obstacle + dist_from_obstacles * normal_vector
 
-        return new_goal.round()
+        # Check new goal for nearby obstacles
+        [found_obstacle, closest_obstacle, min_dist_new] = \
+            self.detectObstacles(grid_size, ogm, new_goal.round())
+
+        # Return
+        if min_dist < 7:
+            # return the target with max min_dist
+            if min_dist_new > min_dist:
+              return [True, new_goal.round(), goals[min_idx]]
+            else:
+              return [False, goals[min_idx]]
+        else:
+            return [False, goals[min_idx]]
 
     def selectRandomTarget(self, ogm, coverage, brushogm, ogm_limits):
       # The next target in pixels
@@ -268,5 +266,34 @@ class TargetSelection:
                 found_obstacle = False
         return occupied
 
+    def detectObstacles(self, grid_size, ogm, point):
+        # Goal Coordinates
+        x_goal = point[0]
+        y_goal = point[1]
+
+        obstacles_found = False
+        min_dist = 0
+        closest_obstacle = None
+
+        # Obstacles in a grid_size x grid_size neighborhood
+        ogm_segment = ogm[x_goal-grid_size: x_goal+grid_size,\
+                          y_goal-grid_size: y_goal+grid_size]
+        
+        obs_idxs = np.where(ogm_segment > 80)
+
+        # If there are no obstacles terminate normally
+        if obs_idxs[0].size == 0:
+          obstacles_found = False
+          return [False, closest_obstacle, min_dist]
+
+
+        # Find the closest obstacle
+        obs_idxs = np.array([obs_idxs[0],obs_idxs[1]]).transpose()
+        distances = np.hypot(obs_idxs[0:,0] - grid_size,obs_idxs[0:,1] - grid_size)
+        closest_idx = distances.argmin()
+        min_dist = distances.min()
+        closest_obstacle = obs_idxs[closest_idx] - np.array([grid_size,grid_size]) + point
+
+        return [True, closest_obstacle, min_dist]
 
 
