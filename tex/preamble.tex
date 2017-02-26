@@ -1,0 +1,256 @@
+\documentclass[11pt,a4paper,titlepage,oneside]{scrartcl}
+
+%\usepackage[includeheadfoot]{geometry}
+%\usepackage[left=1in,right=1in,top=1in,bottom=1.5in]{geometry}
+
+% ---------------------
+% 		 FONTS
+% ---------------------
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{amsmath}
+
+\usepackage{fontspec}
+\usepackage{unicode-math}
+\defaultfontfeatures{Ligatures=TeX, Scale=1, Mapping=tex-text}
+
+\setmainfont{Georgia}
+\setsansfont[Scale=MatchUppercase]{Verdana}
+
+\setmathfont[Scale=MatchLowercase]{xits-math.otf}
+
+% \setmathsfont(Digits,Greek,Latin)[Numbers={Proportional}]{Minion Pro}
+
+\linespread{1.05}
+
+\usepackage{microtype}
+
+% ---------------------
+%   LANGUAGE OPTIONS
+% ---------------------
+% Polyglossia warning: due to a bug (https://github.com/reutenauer/polyglossia/issues/110) numbering with greek letters is incorrect.
+% /usr/share/texmf-dist/tex/latex/polyglossia/gloss-greek.ldf must be edited.
+% or \setmainlanguage[numerals=arabic]{greek} should be used instead.
+\usepackage{polyglossia}
+\setmainlanguage{greek}
+\setotherlanguages{english}
+
+\PolyglossiaSetup{greek}{indentfirst=false}
+\PolyglossiaSetup{english}{indentfirst=false}
+
+\newfontfamily\greekfont[Script=Greek]{Georgia}
+\newfontfamily\greekfontsf[Script=Greek]{Verdana}
+
+% ---------------------
+% KOMA-SPECIFIC OPTIONS
+% ---------------------
+%\addtokomafont{disposition}{\rmfamily}
+\addtokomafont{author}{\large}
+\addtokomafont{subject}{\sffamily}
+\addtokomafont{subtitle}{\Large}
+\addtokomafont{date}{\large}
+\addtokomafont{caption}{\small}
+\addtokomafont{captionlabel}{\small}
+
+% Headers, Footers
+\usepackage[automark,headsepline,footsepline]{scrlayer-scrpage}
+
+\clearpairofpagestyles
+\lohead{Ευφυή Συστήματα Ρομπότ}
+\rehead{Ευφυή Συστήματα Ρομπότ}
+
+\lehead{\headmark}
+\rohead{\headmark}
+
+\lofoot{Σελίδα \thepage\ από \pageref{LastPage}}
+\refoot{Σελίδα \thepage\ από \pageref{LastPage}}
+\pagestyle{scrheadings}
+
+\setkomafont{pagehead}{\normalfont}
+\setkomafont{pagefoot}{\normalfont}
+
+% Heading spacings
+% \RedeclareSectionCommand[
+%   beforeskip=-.5\baselineskip,
+%   afterskip=.01\baselineskip]{section}
+% \RedeclareSectionCommand[
+%   beforeskip=-.5\baselineskip,
+%   afterskip=1sp]{subsection}
+% \RedeclareSectionCommand[
+%   beforeskip=-.5\baselineskip,
+%   afterskip=1sp]{subsubsection}
+%\RedeclareSectionCommand[
+%  beforeskip=.5\baselineskip,
+%  afterskip=-1em]{paragraph}
+%\RedeclareSectionCommand[
+%  beforeskip=-.5\baselineskip,
+%  afterskip=-1em]{subparagraph}
+
+% ----------------------
+% Figure numbering scheme
+% ----------------------
+\usepackage{chngcntr}
+\counterwithin{figure}{section}
+%\setcounter{lofdepth}{2}
+
+% ----------------------
+% MISCELLANEOUS PACKAGES
+% ----------------------
+\setcounter{tocdepth}{3} % subsub has numbers
+\setcounter{secnumdepth}{3} % subsub in toc
+
+% Argument 'table' for '\cellcolor{}' command.
+% Should be high because it might get loaded by another package with different arguments:
+% - http://tex.stackexchange.com/questions/87197/latex-error-option-clash-for-package-xcolor-for-table
+% - http://tex.stackexchange.com/questions/83101/option-clash-for-package-xcolor
+\usepackage[usenames, table]{xcolor}
+
+% For \includegraphics.
+% https://ctan.org/pkg/graphicx
+\usepackage{graphicx}
+\graphicspath{{./figures/}}
+
+% Provides LaTeX the ability to create hyperlinks within the document.
+% https://www.ctan.org/pkg/hyperref
+% http://en.wikibooks.org/wiki/LaTeX/Hyperlinks#Hyperref
+\usepackage{hyperref}
+
+\hypersetup{
+    colorlinks,
+    linkcolor={blue!50!black},
+    citecolor={blue!50!black},
+    urlcolor={blue!70!black},
+    breaklinks=true
+}
+
+% Go to the top of an image when a figure reference is clicked:
+% http://stackoverflow.com/a/21251925/3430986%
+\usepackage{caption}
+
+% Extra argument for the enumerate enviroment.
+% http://ctan.org/pkg/enumerate
+\usepackage{enumerate}
+
+% \multirow in tables.
+\usepackage{multirow}
+% Used for better handling of multi-line rows on tables.
+\usepackage{tabularx}
+% Better tables.
+\usepackage{booktabs}
+
+% For \FloatBarrier.
+\usepackage[section]{placeins}
+\makeatletter
+\AtBeginDocument{%
+  \expandafter\renewcommand\expandafter\subsection\expandafter{%
+    \expandafter\@fb@secFB\subsection
+  }%
+}
+\makeatother
+
+% For maxsizebox:
+% http://stackoverflow.com/a/29143366/3430986
+\usepackage{adjustbox}
+% For figure 'H' placement.
+\usepackage{float}
+
+%\usepackage{etoolbox}
+
+% For logo in footer.
+%\usepackage[all]{background}
+\usepackage{lastpage}
+
+% Quick image refs etc.
+\newcommand{\imageref}[1] {%
+\hyperref[fig:#1]{\figurename{} \ref{fig:#1}}}
+
+\newcommand{\imagerefc}[2] {%
+\hyperref[fig:#1]{fig:#2}}
+
+\newcommand{\imagehere}[2]{%
+\begin{figure}[H]%
+\centering%
+\includegraphics[keepaspectratio, width=1.0\linewidth]{images/#1}%
+\caption{#2}
+\label{fig:#1}%
+\end{figure}%
+}
+
+% Bibliography.
+\usepackage[numbers, sort]{natbib}
+\bibliographystyle{plainnat}
+
+% Define code enviroment for captions and whatnot.
+\newenvironment{code}{\captionsetup{type=listing}}{}
+% Fix tikz's "some package has redefined the meaning of the math-mode dollar sign" bug/error.
+% https://github.com/HiSPARC/infopakket/issues/27#issuecomment-134511920
+% http://tex.stackexchange.com/questions/165929/semiverbatim-with-tikz-in-beamer
+\makeatletter
+\global\let\tikz@ensure@dollar@catcode=\relax
+\makeatother
+
+% Minted package for the listings.
+\usepackage[newfloat=true]{minted}
+\setminted{%
+	autogobble=true,%
+	breaklines=true,%
+	frame=none,%
+	linenos=false%
+}
+
+% For subfigures
+\usepackage{subcaption}
+
+% For quotations. Verbatim enviroment for non-code text.
+% csquotes should be loaded after fvextra, to avoid a warning from the lineno package
+\usepackage{csquotes}
+
+% ---------------------
+% 		 TIKZ
+% ---------------------
+\usepackage{pgfplots}
+\usepackage{tikz}
+\usepackage{tikzscale}
+\usetikzlibrary{shapes,arrows,calc}
+\usepackage{blox}
+\usetikzlibrary{plotmarks}
+\usetikzlibrary{patterns, shadings, tikzmark}
+
+% ---------------------
+% 	  CUSTOM MATHS
+% ---------------------
+% http://tex.stackexchange.com/a/56953/78791
+\newcommand{\argmin}{\operatornamewithlimits{argmin}}
+% http://tex.stackexchange.com/a/107190/78791
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\newcommand{\abs}[1]{\left\lvert#1\right\rvert}
+%\newcommand{\overbar}[1]{\mkern 1.5mu\overline{\mkern-1.5mu#1\mkern-1.5mu}\mkern 1.5mu}
+%% Number specific equation in align*
+%\newcommand\numberthis{\addtocounter{equation}{1}\tag{\theequation}}
+%
+%% bad fonts for implies?
+%\renewcommand{\implies}{=\!\Rightarrow}
+
+% To use float.sty properly, load package float before wrapfig, and declare any new float types after loading both.
+\usepackage{wrapfig}
+\makeatletter
+\newcommand{\forceendwrapfig}{\WF@finale{}}
+\makeatother
+
+% Fix URLs not breaking in citations
+% http://tex.stackexchange.com/a/115820/93245
+\usepackage{breakcites}
+\urlstyle{same}
+\Urlmuskip=0mu plus 1mu\relax
+
+% For better lists
+% http://tex.stackexchange.com/questions/33334/description-list-with-right-alignment-of-labels
+\usepackage{enumitem}
+\SetLabelAlign{parright}{\parbox[t]{\labelwidth}{\raggedleft#1}}
+\setlist[description]{style=multiline,topsep=10pt,leftmargin=3.5cm,rightmargin=0.5cm,font=\normalfont,align=parright}
+
+% For verbatim labels in description labels
+\usepackage[Q=yes]{examplep}
+
+% Multi-row spanning lines in tables
+\usepackage{multirow}
